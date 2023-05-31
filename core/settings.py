@@ -23,6 +23,7 @@ class Settings(BaseSettings):
     DB_PORT: int = 5432
     
     CONTEXT_MESSAGES_MAX_SIZE: int = 10
+    FREE_CREDIT: int = 5000
 
     class Config:
         """Configure the environment variable model to be case sensitive."""

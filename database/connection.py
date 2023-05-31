@@ -1,5 +1,5 @@
 from .utils import get_to_set, normalize
-from typing import List, Dict, Optional, Any, Callable, Literal, Tuple
+from typing import List, Dict, Optional, Any, Literal, Tuple
 
 import psycopg2
 
@@ -214,11 +214,12 @@ class Connection:
             self.close()
             raise e
 
-    def select_dict(self, query: str, *params) -> Optional[List[Dict[str, Any]]]:
+    def select(self, query: str, *params) -> Optional[List[Dict[str, Any]]]:
         try:
             cursor = self._cursor()
             cursor.execute(query, params)
             columns = [column[0] for column in cursor.description]
+            # pylint: disable=C3001
             prevent_datetime = lambda arr: [
                 x if not isinstance(x, datetime) else x.strftime("%Y-%m-%d %H:%M:%S")
                 for x in arr
@@ -233,7 +234,7 @@ class Connection:
             self.close()
             raise e
 
-    def select(
+    def select_dict(
         self,
         table: str,
         where: dict,
@@ -241,7 +242,7 @@ class Connection:
         clause: Optional[Literal["and", "or"]] = "and",
     ) -> Optional[List[Dict[str, Any]]]:
         query = f"SELECT * FROM {table} WHERE {self.get_where(where, clause=clause)} {self.get_order_by(order_by)}"
-        return self.select_dict(query)
+        return self.select(query)
 
     def commit(self) -> None:
         self.conn.commit()

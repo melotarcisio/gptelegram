@@ -6,7 +6,12 @@ import requests
 from typing import List, Callable
 
 from core.settings import settings
-from core.constants import INITIAL_MESSAGE, PAYMENT_OPTIONS_MESSAGE, LIMIT_EXCEEDED_MESSAGE
+from core.constants import (
+    INITIAL_MESSAGE, 
+    PAYMENT_OPTIONS_MESSAGE, 
+    LIMIT_EXCEEDED_MESSAGE_FREE, 
+    LIMIT_EXCEEDED_MESSAGE_PAID
+)
 
 from .context import ContextManager
 from .schema import Update
@@ -26,8 +31,10 @@ def get_updates(offset: int=None) -> List[Update]:
 
 def recarregar_command(sender: Callable[[str], None], args = List[str]):
     value = None
-    try: value = float(args[0])
-    except Exception: pass
+    try:
+        value = float(args[0])
+    except Exception:
+        pass
 
     if not value:
         return sender(PAYMENT_OPTIONS_MESSAGE)
@@ -73,12 +80,16 @@ class MessageHandler:
                     return
 
         user = User.get_or_create(chat_id)
-        if user.reached_limit():
-            self.context_manager.send(
+        if user.credit_situation == 'free-exceeded':
+            return self.context_manager.send(
                 chat_id,
-                LIMIT_EXCEEDED_MESSAGE
+                LIMIT_EXCEEDED_MESSAGE_FREE
             )
-            return
+        elif user.credit_situation == 'paid-exceeded':
+            return self.context_manager.send(
+                chat_id,
+                LIMIT_EXCEEDED_MESSAGE_PAID
+            )
 
         chat_response, tokens_prompt, tokens_response = \
             self.context_manager.process_text(chat_id, prompt)

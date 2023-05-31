@@ -1,5 +1,11 @@
+"""
+Simple ORM for the database with some business logic.
+"""
+from datetime import datetime
 from pydantic import BaseModel, validator
+from typing import Literal
 
+from core.settings import settings
 from database import get_db
 from io import BytesIO
 
@@ -12,16 +18,53 @@ class User(BaseModel):
     @classmethod
     def get_or_create(cls, chat_id):
         db = get_db()
-        data = db.select('users', {'chat_id': chat_id})
+        data = db.select_dict('users', {'chat_id': chat_id})
         if len(data):
             return cls(**data[0])
         else:
             user_id = db.insert_dict('users', {'chat_id': chat_id}, 'id')
             return cls(id=user_id, chat_id=chat_id)
 
-    def reached_limit(self):
-        # TODO: implement
-        return False
+    def count_credit(self):
+        db = get_db()
+        query = f"""
+            SELECT SUM(amount) as credit 
+            FROM transactions 
+            WHERE chat_id = '{self.chat_id}' 
+            GROUP BY chat_id
+        """
+        data = db.select(query)
+        if data and len(data):
+            return sum([d['credit'] for d in data])
+        else:
+            return 0
+    
+    def count_used(self):
+        db = get_db()
+        query = f"""
+            SELECT 
+                SUM(response_tokens) + SUM(prompt_tokens) as used 
+            FROM message_log_history 
+            WHERE chat_id = '{self.chat_id}' 
+            GROUP BY chat_id
+        """
+        data = db.select(query)
+        if data and len(data):
+            return sum([d['used'] for d in data])
+        else:
+            return 0
+
+    @property
+    def credit_situation(self) -> Literal['free', 'free-exceeded', 'paid', 'paid-exceeded']:
+        sit = ''
+        
+        credit = self.count_credit() + settings.FREE_CREDIT
+        sit = 'free' if credit == settings.FREE_CREDIT else 'paid'
+
+        used = self.count_used()
+        sit += '-exceeded' if used >= credit else ''
+        return sit
+
 
 class MessageLogHistory(BaseModel):
     id: int = None
@@ -86,3 +129,22 @@ class Message(BaseModel):
         )
         
         return cls(log_history=log_history, content=message_content)
+    
+
+class Transaction(BaseModel):
+    id: int = None
+    chat_id: str
+    amount: int
+    value_paid: float
+    created_at: datetime = None
+
+    @classmethod
+    def create(cls, chat_id: str, amount: int, value_paid: float):
+        db = get_db()
+        transaction = cls(chat_id=chat_id, amount=amount, value_paid=value_paid)
+        transaction.id = db.insert_dict(
+            'transactions',
+            transaction.dict(exclude_none=True),
+            'id'
+        )
+        return transaction
