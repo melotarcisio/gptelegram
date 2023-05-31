@@ -22,6 +22,7 @@ def bot_loop():
             for update in updates:
                 if update.update_id > off_set:
                     off_set = update.update_id
+                # TODO: handle message in a separate thread
                 message_handler.handle(update)
         except Exception as e:
             logger.send(str(e))

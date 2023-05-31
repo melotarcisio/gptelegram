@@ -3,9 +3,10 @@ Depends on context.py, schema.py, utils.py
 """
 import requests
 
-from typing import List
+from typing import List, Callable
 
 from core.settings import settings
+from core.constants import INITIAL_MESSAGE, PAYMENT_OPTIONS_MESSAGE, LIMIT_EXCEEDED_MESSAGE
 
 from .context import ContextManager
 from .schema import Update
@@ -23,9 +24,23 @@ def get_updates(offset: int=None) -> List[Update]:
         return []
 
 
-COMMANDS = {
-    'start': lambda _: None, # TODO: send a presentation message
-    'recarregar': lambda _: None # TODO: send a message with payment options
+def recarregar_command(sender: Callable[[str], None], args = List[str]):
+    value = None
+    try: value = float(args[0])
+    except Exception: pass
+
+    if not value:
+        return sender(PAYMENT_OPTIONS_MESSAGE)
+    else:
+        # TODO: generate a payment link and send to user
+        ...
+
+
+Comand = Callable[[Callable[[str], None], List[str]], None]
+COMMANDS = { # To be used as "/command args" by the user
+    'start': lambda sender, _: sender(INITIAL_MESSAGE),
+    'recarregar': recarregar_command,
+    'help': lambda sender, _: sender(PAYMENT_OPTIONS_MESSAGE)
 }
 
 
@@ -51,16 +66,18 @@ class MessageHandler:
             if prompt.startswith('/'):
                 [command, *args] = prompt[1:].split(' ')
                 if command in COMMANDS:
-                    COMMANDS[command](args)
+                    COMMANDS[command](
+                        lambda message: self.context_manager.send(chat_id, message),
+                        args
+                    )
                     return
 
         user = User.get_or_create(chat_id)
         if user.reached_limit():
             self.context_manager.send(
-                chat_id, 
-                'Você atingiu sua cota maxima. Realize uma recarga para continuar.'
+                chat_id,
+                LIMIT_EXCEEDED_MESSAGE
             )
-            # TODO: send a message with payment options
             return
 
         chat_response, tokens_prompt, tokens_response = \
