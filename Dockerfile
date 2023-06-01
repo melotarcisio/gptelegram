@@ -2,7 +2,7 @@ FROM python:3.10
 
 WORKDIR /app/
 
-# Install ffmpeg
+# Install ffmpeg and flac
 RUN apt-get update && \
     apt-get install -y ffmpeg flac
 

@@ -20,6 +20,7 @@ class Chat(BaseModel):
     
     def to_orm_dict(self):
         data = {
+            'chat_id': self.id,
             'type': self.type,
         }
         if self.first_name:

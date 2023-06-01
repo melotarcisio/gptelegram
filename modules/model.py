@@ -22,23 +22,6 @@ class User(BaseModel):
         db = get_db()
         db.update('users', self.dict(exclude=None), {'chat_id': self.chat_id})
 
-    @classmethod
-    def get_or_create(cls, chat: Chat):
-        db = get_db()
-        data = db.select_dict('users', {'chat_id': chat.id})
-        
-        if not len(data):
-            db.insert_dict('users', chat.to_orm_dict(), 'id')
-            return cls.get_or_create(chat)
-        
-        instance = cls(**data[0])
-        if instance.type != chat.type:
-            instance.first_name = chat.first_name
-            instance.username = chat.username
-            instance.save()
-        
-        return instance
-
     def count_credit(self):
         db = get_db()
         query = f"""
@@ -80,6 +63,23 @@ class User(BaseModel):
         # used = self.count_used()
         # sit += '-exceeded' if used >= credit else ''
         # return sit
+
+    @classmethod
+    def get_or_create(cls, chat: Chat):
+        db = get_db()
+        data = db.select_dict('users', {'chat_id': chat.id})
+        
+        if not len(data):
+            db.insert_dict('users', chat.to_orm_dict(), 'id')
+            return cls.get_or_create(chat)
+        
+        instance = cls(**data[0])
+        if instance.type != chat.type:
+            instance.first_name = chat.first_name
+            instance.username = chat.username
+            instance.save()
+        
+        return instance
 
 
 class MessageLogHistory(BaseModel):
