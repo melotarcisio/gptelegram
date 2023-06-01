@@ -5,25 +5,39 @@ from datetime import datetime
 from pydantic import BaseModel, validator
 from typing import Literal
 
-from core.settings import settings
 from database import get_db
 from io import BytesIO
 
 from .utils import audio_file_to_str
+from .schema import Chat
 
 class User(BaseModel):
     id: int = None
     chat_id: str
+    first_name: str = None
+    username: str = None
+    type: str = None
+
+    def save(self):
+        db = get_db()
+        db.update('users', self.dict(exclude=None), {'chat_id': self.chat_id})
 
     @classmethod
-    def get_or_create(cls, chat_id):
+    def get_or_create(cls, chat: Chat):
         db = get_db()
-        data = db.select_dict('users', {'chat_id': chat_id})
-        if len(data):
-            return cls(**data[0])
-        else:
-            user_id = db.insert_dict('users', {'chat_id': chat_id}, 'id')
-            return cls(id=user_id, chat_id=chat_id)
+        data = db.select_dict('users', {'chat_id': chat.id})
+        
+        if not len(data):
+            db.insert_dict('users', chat.to_orm_dict(), 'id')
+            return cls.get_or_create(chat)
+        
+        instance = cls(**data[0])
+        if instance.type != chat.type:
+            instance.first_name = chat.first_name
+            instance.username = chat.username
+            instance.save()
+        
+        return instance
 
     def count_credit(self):
         db = get_db()
@@ -56,14 +70,16 @@ class User(BaseModel):
 
     @property
     def credit_situation(self) -> Literal['free', 'free-exceeded', 'paid', 'paid-exceeded']:
-        sit = ''
+        return 'paid'
+        # TODO: feature pagamento
+        # sit = ''
         
-        credit = self.count_credit() + settings.FREE_CREDIT
-        sit = 'free' if credit == settings.FREE_CREDIT else 'paid'
+        # credit = self.count_credit() + settings.FREE_CREDIT
+        # sit = 'free' if credit == settings.FREE_CREDIT else 'paid'
 
-        used = self.count_used()
-        sit += '-exceeded' if used >= credit else ''
-        return sit
+        # used = self.count_used()
+        # sit += '-exceeded' if used >= credit else ''
+        # return sit
 
 
 class MessageLogHistory(BaseModel):

@@ -4,7 +4,7 @@ WORKDIR /app/
 
 # Install ffmpeg
 RUN apt-get update && \
-    apt-get install -y ffmpeg
+    apt-get install -y ffmpeg flac
 
 # Install Poetry
 RUN curl -sSL https://install.python-poetry.org | \

@@ -17,7 +17,7 @@ def bot_loop():
     off_set = max([*map(
         lambda x: x.update_id,
         updates
-    ), 0])
+    ), 0]) - 1
     
     threads: List[Thread] = []
     

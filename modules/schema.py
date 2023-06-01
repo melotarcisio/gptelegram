@@ -17,6 +17,16 @@ class Chat(BaseModel):
     @validator('id')
     def id_should_be_str(cls, v):
         return str(v)
+    
+    def to_orm_dict(self):
+        data = {
+            'type': self.type,
+        }
+        if self.first_name:
+            data['first_name'] = self.first_name
+        if self.username:
+            data['username'] = self.username
+        return data
 
 class Voice(BaseModel):
     duration: int

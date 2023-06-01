@@ -1,6 +1,9 @@
 CREATE TABLE IF NOT EXISTS users (
     id SERIAL PRIMARY KEY,
     chat_id TEXT NOT NULL UNIQUE,
+    first_name TEXT,
+    username TEXT,
+    type TEXT,
     created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
 );
 

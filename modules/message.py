@@ -46,8 +46,9 @@ def recarregar_command(sender: Callable[[str], None], args = List[str]):
 Comand = Callable[[Callable[[str], None], List[str]], None]
 COMMANDS = { # To be used as "/command args" by the user
     'start': lambda sender, _: sender(INITIAL_MESSAGE),
-    'recarregar': recarregar_command,
-    'help': lambda sender, _: sender(PAYMENT_OPTIONS_MESSAGE)
+    # TODO: feature pagamento
+    # 'recarregar': recarregar_command,
+    # 'help': lambda sender, _: sender(PAYMENT_OPTIONS_MESSAGE)
 }
 
 
@@ -79,7 +80,7 @@ class MessageHandler:
                     )
                     return
 
-        user = User.get_or_create(chat_id)
+        user = User.get_or_create(update.message.chat)
         if user.credit_situation == 'free-exceeded':
             return self.context_manager.send(
                 chat_id,
