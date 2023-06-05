@@ -1,9 +1,9 @@
 """
 Depends on context.py, schema.py, utils.py
 """
-import requests
+import requests, openai
 
-from typing import List, Callable
+from typing import List, Callable, Any
 
 from core.settings import settings
 from core.constants import (
@@ -43,9 +43,20 @@ def recarregar_command(sender: Callable[[str], None], args = List[str]):
         ...
 
 
-Comand = Callable[[Callable[[str], None], List[str]], None]
+def imagine_image(sender: Callable[[str, bool], None], args = List[str]):
+    text = ' '.join(args)
+    response = openai.Image.create(
+        prompt=text,
+        n=1,
+        size='1024x1024'
+    )
+    image_url = response['data'][0]['url']
+    sender(image_url, True)
+
+Comand = Callable[[Callable[[str, bool], None], List[str]], None]
 COMMANDS = { # To be used as "/command args" by the user
-    'start': lambda sender, _: sender(INITIAL_MESSAGE),
+    'start': lambda sender, _: sender(INITIAL_MESSAGE, False),
+    'imagine': imagine_image
     # TODO: feature pagamento
     # 'recarregar': recarregar_command,
     # 'help': lambda sender, _: sender(PAYMENT_OPTIONS_MESSAGE)
@@ -75,7 +86,7 @@ class MessageHandler:
                 [command, *args] = prompt[1:].split(' ')
                 if command in COMMANDS:
                     COMMANDS[command](
-                        lambda message: self.context_manager.send(chat_id, message),
+                        lambda message, image: self.context_manager.send(chat_id, message, image),
                         args
                     )
                     return

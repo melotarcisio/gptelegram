@@ -41,6 +41,17 @@ class UserSender:
             requests.get(self.url + 'sendMessage', params=params)
         except Exception as e:
             print(f'Error from SEND function message: {e}')
+            
+    def send_image(self, image_url: str):
+        try:
+            params = {
+                'chat_id': self.chat,
+                'photo': image_url
+            }
+            
+            requests.get(self.url + 'sendPhoto', params=params)
+        except Exception as e:
+            print(f'Error from SEND_IMAGE function message: {e}')
 
 
 logger = UserSender()
@@ -165,7 +176,11 @@ class ContextManager:
             self.new_context(chat_id)
         return self.contexts[chat_id].process(text)
 
-    def send(self, chat_id, text):
+    def send(self, chat_id, text, is_image=False):
         if not self.is_active(chat_id):
             self.new_context(chat_id)
-        self.contexts[chat_id].sender.send(text)
+
+        if is_image:
+            self.contexts[chat_id].sender.send_image(text)
+        else:
+            self.contexts[chat_id].sender.send(text)
