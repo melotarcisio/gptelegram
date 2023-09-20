@@ -26,7 +26,7 @@ To get started with the project, following are required:
 3. Run the following command to start the telegram bot:
 
    ```bash
-    docker-compose up
+    docker compose up
    ```
 
 Your bot should now be up and running to interact and respond to anyone on Telegram!
