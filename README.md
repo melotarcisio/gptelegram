@@ -33,7 +33,7 @@ Your bot should now be up and running to interact and respond to anyone on Teleg
 
 ## Support
 
-Write a email to me alpha@mail.com
+Write a email to me melotarcisio@hotmail.com
 
 ## Contribute
 
